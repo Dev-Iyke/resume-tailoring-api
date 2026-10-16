@@ -11,3 +11,44 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+enum RequestStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+model User {
+  id            String   @id @default(uuid()) @db.Uuid
+  full_name     String
+  email         String   @unique
+  resume        Resume?
+  password_hash String
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+}
+
+model Resume {
+  id                 String             @id @default(uuid()) @db.Uuid
+  //One resume to one user
+  user_id            String             @unique @db.Uuid
+  user               User               @relation(fields: [user_id], references: [id])
+  tailoring_requests TailoringRequest[]
+  text               String
+  created_at         DateTime           @default(now())
+  updated_at         DateTime           @updatedAt
+}
+
+model TailoringRequest {
+  id              String        @id @default(uuid()) @db.Uuid
+  resume_id       String        @db.Uuid
+  resume          Resume        @relation(fields: [resume_id], references: [id])
+  job_title       String
+  company_name    String?
+  job_description String
+  status          RequestStatus @default(PENDING)
+  result          Json?
+  generated_at    DateTime?
+  created_at      DateTime      @default(now())
+  updated_at      DateTime      @updatedAt
+}
