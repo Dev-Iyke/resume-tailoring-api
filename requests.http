@@ -1,0 +1,32 @@
+@baseUrl = http://localhost:5000/api/v1
+@resumeId = 22222222-2222-4222-8222-222222222222
+# Replace with data.id returned by the create request.
+@requestId = b0d0a4fd-5226-414e-bbf7-e2273a15aebc
+
+### Create a tailoring request
+POST {{baseUrl}}/tailoring-requests
+Content-Type: application/json
+
+{
+  "resume_id": "{{resumeId}}",
+  "company_name": "Example Labs",
+  "job_title": "Junior Backend Developer",
+  "job_description": "We are seeking a junior backend developer to build REST APIs using Node.js and TypeScript. The role involves working with PostgreSQL, writing tests, reviewing code, and collaborating with frontend engineers."
+}
+
+### List tailoring requests
+GET {{baseUrl}}/tailoring-requests
+
+### Get a tailoring request
+GET {{baseUrl}}/tailoring-requests/{{requestId}}
+
+### Update a tailoring request
+PATCH {{baseUrl}}/tailoring-requests/{{requestId}}
+Content-Type: application/json
+
+{
+  "job_title": "Backend Developer"
+}
+
+### Delete a tailoring request
+DELETE {{baseUrl}}/tailoring-requests/{{requestId}}
