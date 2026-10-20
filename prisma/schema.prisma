@@ -7,6 +7,12 @@ datasource db {
   provider = "postgresql"
 }
 
+enum UserStatus {
+  PENDING_VERIFICATION
+  ACTIVE
+  SUSPENDED
+}
+
 enum RequestStatus {
   PENDING
   COMPLETED
@@ -14,13 +20,28 @@ enum RequestStatus {
 }
 
 model User {
-  id            String   @id @default(uuid()) @db.Uuid
-  full_name     String
-  email         String   @unique
-  resume        Resume?
-  password_hash String
-  created_at    DateTime @default(now())
-  updated_at    DateTime @updatedAt
+  id                 String             @id @default(uuid()) @db.Uuid
+  full_name          String
+  email              String             @unique
+  resume             Resume?
+  password_hash      String
+  status             UserStatus         @default(PENDING_VERIFICATION)
+  email_verified_at  DateTime?
+  email_verification EmailVerification?
+  created_at         DateTime           @default(now())
+  updated_at         DateTime           @updatedAt
+}
+
+model EmailVerification {
+  id            String    @id @default(uuid()) @db.Uuid
+  user_id       String    @unique @db.Uuid
+  user          User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  code_hash     String
+  attempt_count Int       @default(0)
+  expires_at    DateTime
+  consumed_at   DateTime?
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
 }
 
 model Resume {

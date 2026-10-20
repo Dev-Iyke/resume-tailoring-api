@@ -1,0 +1,115 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1180" viewBox="0 0 1600 1180" role="img" aria-labelledby="title description">
+  <title id="title">Resume Tailoring API entity relationship diagram</title>
+  <desc id="description">Four entities: User, EmailVerification, Resume, and TailoringRequest, with one-to-zero-or-one and one-to-many relationships.</desc>
+  <defs>
+    <style>
+      text { font-family: Arial, Helvetica, sans-serif; fill: #20383A; }
+      .title { font-size: 25px; font-weight: 700; letter-spacing: 0; fill: #163A3D; }
+      .subtitle { font-size: 13px; fill: #557072; }
+      .entity-title { font-size: 15px; font-weight: 700; fill: #FFFFFF; }
+      .field { font-size: 13px; }
+      .field-muted { font-size: 12px; fill: #597173; }
+      .rel { font-size: 12px; font-weight: 700; fill: #31565A; }
+      .note-title { font-size: 13px; font-weight: 700; fill: #163A3D; }
+      .note { font-size: 12px; fill: #355356; }
+    </style>
+  </defs>
+  <rect width="1600" height="1180" fill="#FFFFFF"/>
+  <text class="title" x="70" y="62">RESUME TAILORING API</text>
+  <text class="subtitle" x="70" y="88">ENTITY RELATIONSHIP DIAGRAM · PostgreSQL</text>
+
+  <!-- User -->
+  <g transform="translate(90 145)">
+    <rect width="510" height="354" rx="3" fill="#FFFFFF" stroke="#C9D8D7" stroke-width="1.5"/>
+    <path d="M3 0h504a3 3 0 0 1 3 3v39H0V3a3 3 0 0 1 3-3Z" fill="#163A3D"/>
+    <text class="entity-title" x="20" y="27">USER</text>
+    <g class="field">
+      <text x="20" y="72"><tspan font-weight="700">PK</tspan><tspan dx="10">id</tspan></text><text class="field-muted" x="270" y="72">UUID</text>
+      <text x="20" y="106">full_name</text><text class="field-muted" x="270" y="106">String</text>
+      <text x="20" y="140">email</text><text class="field-muted" x="270" y="140">String, unique</text>
+      <text x="20" y="174">password_hash</text><text class="field-muted" x="270" y="174">String</text>
+      <text x="20" y="208">status</text><text class="field-muted" x="270" y="208">UserStatus enum</text>
+      <text x="20" y="242">email_verified_at</text><text class="field-muted" x="270" y="242">DateTime, nullable</text>
+      <text x="20" y="276">created_at</text><text class="field-muted" x="270" y="276">DateTime</text>
+      <text x="20" y="310">updated_at</text><text class="field-muted" x="270" y="310">DateTime</text>
+    </g>
+  </g>
+
+  <!-- EmailVerification -->
+  <g transform="translate(1000 145)">
+    <rect width="510" height="350" rx="3" fill="#FFFFFF" stroke="#C9D8D7" stroke-width="1.5"/>
+    <path d="M3 0h504a3 3 0 0 1 3 3v39H0V3a3 3 0 0 1 3-3Z" fill="#286B68"/>
+    <text class="entity-title" x="20" y="27">EMAIL_VERIFICATION</text>
+    <g class="field">
+      <text x="20" y="72"><tspan font-weight="700">PK</tspan><tspan dx="10">id</tspan></text><text class="field-muted" x="270" y="72">UUID</text>
+      <text x="20" y="106"><tspan font-weight="700">FK, UQ</tspan><tspan dx="10">user_id</tspan></text><text class="field-muted" x="270" y="106">UUID</text>
+      <text x="20" y="140">code_hash</text><text class="field-muted" x="270" y="140">String</text>
+      <text x="20" y="174">expires_at</text><text class="field-muted" x="270" y="174">DateTime</text>
+      <text x="20" y="208">attempt_count</text><text class="field-muted" x="270" y="208">Integer</text>
+      <text x="20" y="242">consumed_at</text><text class="field-muted" x="270" y="242">DateTime, nullable</text>
+      <text x="20" y="276">created_at</text><text class="field-muted" x="270" y="276">DateTime</text>
+      <text x="20" y="310">updated_at</text><text class="field-muted" x="270" y="310">DateTime</text>
+    </g>
+  </g>
+
+  <!-- Relationship User to EmailVerification -->
+  <path d="M600 320H1000" fill="none" stroke="#587477" stroke-width="2"/>
+  <path d="M600 313v14m-5-7 5-7 5 7-5 7" fill="none" stroke="#587477" stroke-width="2"/>
+  <circle cx="1000" cy="320" r="5" fill="#FFFFFF" stroke="#587477" stroke-width="2"/>
+  <text class="rel" x="753" y="307">1 to 0..1</text>
+
+  <!-- Resume -->
+  <g transform="translate(90 610)">
+    <rect width="510" height="252" rx="3" fill="#FFFFFF" stroke="#C9D8D7" stroke-width="1.5"/>
+    <path d="M3 0h504a3 3 0 0 1 3 3v39H0V3a3 3 0 0 1 3-3Z" fill="#286B68"/>
+    <text class="entity-title" x="20" y="27">RESUME</text>
+    <g class="field">
+      <text x="20" y="72"><tspan font-weight="700">PK</tspan><tspan dx="10">id</tspan></text><text class="field-muted" x="270" y="72">UUID</text>
+      <text x="20" y="106"><tspan font-weight="700">FK, UQ</tspan><tspan dx="10">user_id</tspan></text><text class="field-muted" x="270" y="106">UUID</text>
+      <text x="20" y="140">text</text><text class="field-muted" x="270" y="140">Text</text>
+      <text x="20" y="174">created_at</text><text class="field-muted" x="270" y="174">DateTime</text>
+      <text x="20" y="208">updated_at</text><text class="field-muted" x="270" y="208">DateTime</text>
+    </g>
+  </g>
+
+  <!-- Relationship User to Resume -->
+  <path d="M345 499V610" fill="none" stroke="#587477" stroke-width="2"/>
+  <path d="M338 499h14m-7-5-7 5 7 5 7-5" fill="none" stroke="#587477" stroke-width="2"/>
+  <circle cx="345" cy="610" r="5" fill="#FFFFFF" stroke="#587477" stroke-width="2"/>
+  <text class="rel" x="360" y="560">1 to 0..1</text>
+
+  <!-- TailoringRequest -->
+  <g transform="translate(780 610)">
+    <rect width="650" height="388" rx="3" fill="#FFFFFF" stroke="#C9D8D7" stroke-width="1.5"/>
+    <path d="M3 0h644a3 3 0 0 1 3 3v39H0V3a3 3 0 0 1 3-3Z" fill="#D5674F"/>
+    <text class="entity-title" x="20" y="27">TAILORING_REQUEST</text>
+    <g class="field">
+      <text x="20" y="72"><tspan font-weight="700">PK</tspan><tspan dx="10">id</tspan></text><text class="field-muted" x="340" y="72">UUID</text>
+      <text x="20" y="106"><tspan font-weight="700">FK</tspan><tspan dx="10">resume_id</tspan></text><text class="field-muted" x="340" y="106">UUID</text>
+      <text x="20" y="140">job_title</text><text class="field-muted" x="340" y="140">String</text>
+      <text x="20" y="174">company_name</text><text class="field-muted" x="340" y="174">String, nullable</text>
+      <text x="20" y="208">job_description</text><text class="field-muted" x="340" y="208">Text</text>
+      <text x="20" y="242">status</text><text class="field-muted" x="340" y="242">RequestStatus enum</text>
+      <text x="20" y="276">result</text><text class="field-muted" x="340" y="276">JSON, nullable</text>
+      <text x="20" y="310">generated_at</text><text class="field-muted" x="340" y="310">DateTime, nullable</text>
+      <text x="20" y="344">created_at / updated_at</text><text class="field-muted" x="340" y="344">DateTime</text>
+    </g>
+  </g>
+
+  <!-- Relationship Resume to TailoringRequest -->
+  <path d="M600 737H780" fill="none" stroke="#587477" stroke-width="2"/>
+  <path d="M600 730v14m-5-7 5-7 5 7-5 7" fill="none" stroke="#587477" stroke-width="2"/>
+  <path d="M780 737m-7 0 7-7m-7 7 7 7m-7-7h7" fill="none" stroke="#587477" stroke-width="2"/>
+  <text class="rel" x="632" y="724">1 to 0..many</text>
+
+  <!-- Notes -->
+  <g transform="translate(90 925)">
+    <rect width="620" height="170" rx="3" fill="#F1F7F5" stroke="#C9D8D7"/>
+    <text class="note-title" x="18" y="27">ENUMS AND INVARIANTS</text>
+    <text class="note" x="18" y="54">UserStatus: PENDING_VERIFICATION | ACTIVE | SUSPENDED</text>
+    <text class="note" x="18" y="78">RequestStatus: PENDING | COMPLETED | FAILED</text>
+    <text class="note" x="18" y="108">Verification codes are stored as hashes. Resending replaces the current code.</text>
+    <text class="note" x="18" y="135">PENDING_VERIFICATION: email_verified_at is null; ACTIVE: timestamp is set.</text>
+  </g>
+  <text class="subtitle" x="90" y="1140">PK = primary key · FK = foreign key · UQ = unique</text>
+</svg>
