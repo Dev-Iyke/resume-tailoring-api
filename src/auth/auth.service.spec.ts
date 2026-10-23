@@ -1,6 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
-import { ConflictException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  HttpException,
+} from '@nestjs/common';
 import { createHmac } from 'node:crypto';
 import { verify } from 'argon2';
 import { AuthService } from './auth.service.js';
@@ -18,21 +22,45 @@ describe('AuthService', () => {
     password_hash: 'stored-hash',
   };
   const txMock = {
-    user: { create: vi.fn() },
-    emailVerification: { create: vi.fn() },
+    user: { create: vi.fn(), update: vi.fn() },
+    emailVerification: { create: vi.fn(), updateMany: vi.fn() },
   };
   const prismaMock = {
+    user: { findUnique: vi.fn() },
+    emailVerification: { findUnique: vi.fn(), updateMany: vi.fn() },
     $transaction: vi.fn(),
   };
   const mailMock = {
     sendVerificationCode: vi.fn(),
   };
   const otpSecret = 'test-only-otp-hmac-secret';
+  const validCode = '01234567';
+  const makeVerification = (overrides: Record<string, unknown> = {}) => ({
+    id: '5f4e2d39-214d-4e83-a511-8602d3d830bc',
+    user_id: user.id,
+    code_hash: createHmac('sha256', otpSecret).update(validCode).digest('hex'),
+    attempt_count: 0,
+    expires_at: new Date(Date.now() + 5 * 60 * 1000),
+    consumed_at: null,
+    created_at: new Date(),
+    updated_at: new Date(),
+    ...overrides,
+  });
 
   beforeEach(async () => {
     vi.clearAllMocks();
+    prismaMock.user.findUnique.mockResolvedValue({
+      id: user.id,
+      email: user.email,
+    });
+    prismaMock.emailVerification.findUnique.mockResolvedValue(
+      makeVerification(),
+    );
+    prismaMock.emailVerification.updateMany.mockResolvedValue({ count: 1 });
     txMock.user.create.mockResolvedValue(user);
+    txMock.user.update.mockResolvedValue({ ...user, status: 'ACTIVE' });
     txMock.emailVerification.create.mockResolvedValue({});
+    txMock.emailVerification.updateMany.mockResolvedValue({ count: 1 });
     prismaMock.$transaction.mockImplementation(
       async (callback: (tx: typeof txMock) => Promise<unknown>) =>
         callback(txMock),
@@ -132,6 +160,74 @@ describe('AuthService', () => {
       'An account with this email already exists.',
     );
     expect(mailMock.sendVerificationCode).not.toHaveBeenCalled();
+  });
+
+  it('verifies the code, consumes it, and activates the user', async () => {
+    const result = await service.verifyEmail({
+      email: user.email,
+      code: validCode,
+    });
+
+    expect(txMock.emailVerification.updateMany).toHaveBeenCalledWith({
+      where: expect.objectContaining({
+        id: '5f4e2d39-214d-4e83-a511-8602d3d830bc',
+        consumed_at: null,
+      }),
+      data: { consumed_at: expect.any(Date) },
+    });
+    expect(txMock.user.update).toHaveBeenCalledWith({
+      where: { id: user.id },
+      data: {
+        email_verified_at: expect.any(Date),
+        status: 'ACTIVE',
+      },
+    });
+    expect(result.data).toMatchObject({
+      email: user.email,
+      status: 'ACTIVE',
+    });
+  });
+
+  it('increments attempts and rejects an incorrect code', async () => {
+    await expect(
+      service.verifyEmail({ email: user.email, code: '87654321' }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+
+    expect(prismaMock.emailVerification.updateMany).toHaveBeenCalledWith({
+      where: expect.objectContaining({
+        id: '5f4e2d39-214d-4e83-a511-8602d3d830bc',
+        attempt_count: { lt: 5 },
+      }),
+      data: { attempt_count: { increment: 1 } },
+    });
+    expect(prismaMock.$transaction).not.toHaveBeenCalled();
+  });
+
+  it('rejects an expired verification code', async () => {
+    prismaMock.emailVerification.findUnique.mockResolvedValueOnce(
+      makeVerification({ expires_at: new Date(Date.now() - 1000) }),
+    );
+
+    await expect(
+      service.verifyEmail({ email: user.email, code: validCode }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+
+    expect(prismaMock.$transaction).not.toHaveBeenCalled();
+  });
+
+  it('returns 429 after the attempt limit is reached', async () => {
+    prismaMock.emailVerification.findUnique.mockResolvedValueOnce(
+      makeVerification({ attempt_count: 5 }),
+    );
+
+    const error = await service
+      .verifyEmail({ email: user.email, code: validCode })
+      .catch((caught: unknown) => caught);
+
+    expect(error).toBeInstanceOf(HttpException);
+    expect((error as HttpException).getStatus()).toBe(429);
+    expect(prismaMock.emailVerification.updateMany).not.toHaveBeenCalled();
+    expect(prismaMock.$transaction).not.toHaveBeenCalled();
   });
 
   it('is defined', () => {
