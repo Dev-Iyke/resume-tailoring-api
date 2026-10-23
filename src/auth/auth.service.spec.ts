@@ -230,6 +230,62 @@ describe('AuthService', () => {
     expect(prismaMock.$transaction).not.toHaveBeenCalled();
   });
 
+  it('resets the verification code and emails a new one after the cooldown', async () => {
+    prismaMock.user.findUnique.mockResolvedValueOnce({
+      id: user.id,
+      status: 'PENDING_VERIFICATION',
+      email_verified_at: null,
+    });
+
+    const result = await service.resendVerification({ email: user.email });
+
+    expect(prismaMock.emailVerification.updateMany).toHaveBeenCalledWith({
+      where: {
+        user_id: user.id,
+        consumed_at: null,
+        last_sent_at: { lte: expect.any(Date) },
+      },
+      data: {
+        code_hash: expect.any(String),
+        attempt_count: 0,
+        expires_at: expect.any(Date),
+        last_sent_at: expect.any(Date),
+      },
+    });
+
+    const [sentEmail, sentCode] = mailMock.sendVerificationCode.mock.calls[0];
+    expect(sentEmail).toBe(user.email);
+    expect(sentCode).toMatch(/^\d{8}$/);
+    expect(
+      prismaMock.emailVerification.updateMany.mock.calls[0][0].data.code_hash,
+    ).toBe(createHmac('sha256', otpSecret).update(sentCode).digest('hex'));
+    expect(result.message).toContain('If this account needs verification');
+  });
+
+  it('does not send another code during the cooldown', async () => {
+    prismaMock.user.findUnique.mockResolvedValueOnce({
+      id: user.id,
+      status: 'PENDING_VERIFICATION',
+      email_verified_at: null,
+    });
+    prismaMock.emailVerification.updateMany.mockResolvedValueOnce({ count: 0 });
+
+    const result = await service.resendVerification({ email: user.email });
+
+    expect(result.message).toContain('If this account needs verification');
+    expect(mailMock.sendVerificationCode).not.toHaveBeenCalled();
+  });
+
+  it('returns the same generic response without sending for an unknown email', async () => {
+    prismaMock.user.findUnique.mockResolvedValueOnce(null);
+
+    const result = await service.resendVerification({ email: user.email });
+
+    expect(result.message).toContain('If this account needs verification');
+    expect(prismaMock.emailVerification.updateMany).not.toHaveBeenCalled();
+    expect(mailMock.sendVerificationCode).not.toHaveBeenCalled();
+  });
+
   it('is defined', () => {
     expect(service).toBeDefined();
   });
