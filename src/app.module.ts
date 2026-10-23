@@ -5,6 +5,7 @@ import { TailoringRequestsModule } from './tailoring-requests/tailoring-requests
 import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module.js';
 import { MailModule } from './mail/mail.module.js';
+import { ResumeModule } from './resumes/resume.module.js';
 
 @Module({
   imports: [
@@ -13,7 +14,8 @@ import { MailModule } from './mail/mail.module.js';
     }),
     TailoringRequestsModule,
     AuthModule,
-    MailModule
+    MailModule,
+    ResumeModule,
   ],
   controllers: [AppController],
   providers: [AppService],
