@@ -28,6 +28,7 @@ async function bootstrap() {
     .setTitle('Resume Tailoring API')
     .setDescription('Backend API for Resume Tailoring API')
     .setVersion('1.0')
+    .addBearerAuth()
     .build();
 
   const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig);

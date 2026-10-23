@@ -2,19 +2,23 @@ import {
   BadRequestException,
   ConflictException,
   HttpException,
+  UnauthorizedException,
+  ForbiddenException,
   HttpStatus,
   Injectable,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { RegisterDto } from './dto/register.dto.js';
 import { successResponse } from '../common/responses/api-response.js';
-import { hash } from 'argon2';
+import { hash, verify } from 'argon2';
 import { ConfigService } from '@nestjs/config';
 import { createHmac, randomInt, timingSafeEqual } from 'node:crypto';
 import { MailService } from '../mail/mail.service.js';
 import { Prisma, type User } from '../generated/prisma/client.js';
 import { VerifyEmailDto } from './dto/verify-email.dto.js';
 import { ResendVerificationDto } from './dto/resend-verification.dto.js';
+import { LoginDto } from './dto/login.dto.js';
+import {JwtService} from "@nestjs/jwt"
 
 const MAX_VERIFY_ATTEMPTS = 5;
 @Injectable()
@@ -23,6 +27,7 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
     private readonly mailService: MailService,
+    private readonly jwtService: JwtService,
   ) {}
 
   async register(payload: RegisterDto) {
@@ -237,4 +242,27 @@ export class AuthService {
 
     return genericResponse();
   }
+
+  async login(payload: LoginDto) {
+  const user = await this.prisma.user.findUnique({
+    where: { email: payload.email },
+  });
+
+  if (!user || !(await verify(user.password_hash, payload.password))) {
+    throw new UnauthorizedException('Invalid email or password.');
+  }
+
+  if (!user.email_verified_at || user.status !== 'ACTIVE') {
+    throw new ForbiddenException('This account is not active.');
+  }
+
+  const accessToken = await this.jwtService.signAsync({
+    sub: user.id,
+  });
+
+  return successResponse('Login successful.', {
+    access_token: accessToken,
+    token_type: 'Bearer',
+  });
+}
 }

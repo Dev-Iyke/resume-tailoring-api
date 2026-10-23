@@ -3,10 +3,13 @@ import { ConfigService } from '@nestjs/config';
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   HttpException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { createHmac } from 'node:crypto';
-import { verify } from 'argon2';
+import { hash, verify } from 'argon2';
+import { JwtService } from '@nestjs/jwt';
 import { AuthService } from './auth.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { MailService } from '../mail/mail.service.js';
@@ -32,6 +35,9 @@ describe('AuthService', () => {
   };
   const mailMock = {
     sendVerificationCode: vi.fn(),
+  };
+  const jwtMock = {
+    signAsync: vi.fn(),
   };
   const otpSecret = 'test-only-otp-hmac-secret';
   const validCode = '01234567';
@@ -66,6 +72,7 @@ describe('AuthService', () => {
         callback(txMock),
     );
     mailMock.sendVerificationCode.mockResolvedValue(undefined);
+    jwtMock.signAsync.mockResolvedValue('test.jwt.token');
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -76,6 +83,7 @@ describe('AuthService', () => {
           useValue: { getOrThrow: vi.fn(() => otpSecret) },
         },
         { provide: MailService, useValue: mailMock },
+        { provide: JwtService, useValue: jwtMock },
       ],
     }).compile();
 
@@ -284,6 +292,50 @@ describe('AuthService', () => {
     expect(result.message).toContain('If this account needs verification');
     expect(prismaMock.emailVerification.updateMany).not.toHaveBeenCalled();
     expect(mailMock.sendVerificationCode).not.toHaveBeenCalled();
+  });
+
+  it('logs in an active user and returns a signed access token', async () => {
+    const password = 'a-long-test-password';
+    const passwordHash = await hash(password);
+    prismaMock.user.findUnique.mockResolvedValueOnce({
+      ...user,
+      password_hash: passwordHash,
+      email_verified_at: new Date(),
+      status: 'ACTIVE',
+    });
+
+    const result = await service.login({ email: user.email, password });
+
+    expect(jwtMock.signAsync).toHaveBeenCalledWith({ sub: user.id });
+    expect(result.data).toEqual({
+      access_token: 'test.jwt.token',
+      token_type: 'Bearer',
+    });
+  });
+
+  it('rejects login when the email or password is incorrect', async () => {
+    prismaMock.user.findUnique.mockResolvedValueOnce(null);
+
+    await expect(
+      service.login({ email: user.email, password: 'a-long-test-password' }),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
+    expect(jwtMock.signAsync).not.toHaveBeenCalled();
+  });
+
+  it('rejects login for a user who has not verified their email', async () => {
+    const password = 'a-long-test-password';
+    const passwordHash = await hash(password);
+    prismaMock.user.findUnique.mockResolvedValueOnce({
+      ...user,
+      password_hash: passwordHash,
+      email_verified_at: null,
+      status: 'PENDING_VERIFICATION',
+    });
+
+    await expect(
+      service.login({ email: user.email, password }),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(jwtMock.signAsync).not.toHaveBeenCalled();
   });
 
   it('is defined', () => {

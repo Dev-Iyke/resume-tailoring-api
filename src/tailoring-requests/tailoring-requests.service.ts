@@ -9,7 +9,16 @@ import { Prisma } from '../generated/prisma/client.js';
 export class TailoringRequestsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(payload: CreateTailoringRequestDto) {
+  async create(userId: string, payload: CreateTailoringRequestDto) {
+    const resume = await this.prisma.resume.findFirst({
+      where: { id: payload.resume_id, user_id: userId },
+      select: { id: true },
+    });
+
+    if (!resume) {
+      throw new NotFoundException('Resume not found');
+    }
+
     const tailoringRequest = await this.prisma.tailoringRequest.create({
       data: payload
     })
@@ -17,16 +26,16 @@ export class TailoringRequestsService {
     return successResponse("Request received", tailoringRequest)
   }
 
-  async findAll() {
+  async findAll(userId: string) {
     const tailoringRequests = await this.prisma.tailoringRequest.findMany({
-      where: {}
+      where: { resume: { is: { user_id: userId } } }
     })
     return successResponse("All requests retrieved", tailoringRequests);
   }
 
-  async findOneById(id: string) {
-    const tailoringRequest = await this.prisma.tailoringRequest.findUnique({
-      where: {id}
+  async findOneById(userId: string, id: string) {
+    const tailoringRequest = await this.prisma.tailoringRequest.findFirst({
+      where: {id, resume: { is: { user_id: userId } },}
     })
 
     if(!tailoringRequest){
@@ -39,8 +48,16 @@ export class TailoringRequestsService {
     )
   }
 
-  async update(id: string, payload: UpdateTailoringRequestDto) {
+  async update(userId: string, id: string, payload: UpdateTailoringRequestDto) {
     try {
+      const prevTailoringRequest = await this.prisma.tailoringRequest.findFirst({
+        where: {id, resume: { is: { user_id: userId } },}
+      })
+
+      if(!prevTailoringRequest){
+        throw new NotFoundException("Tailoring request not found");
+      }
+
       const tailoringRequest = await this.prisma.tailoringRequest.update({
         where: {id},
         data: payload
@@ -61,16 +78,23 @@ export class TailoringRequestsService {
 
   }
 
-  async remove(id: string) {
+  async remove(userId: string, id: string) {
     try {
-      const tailoringRequest = await this.prisma.tailoringRequest.delete({
-      where: {id},
-    })
+      const prevTailoringRequest = await this.prisma.tailoringRequest.findFirst({
+        where: {id, resume: { is: { user_id: userId } },}
+      })
 
-    return successResponse(
-      "Tailoring request deleted successfully",
-      tailoringRequest
-    )
+      if(!prevTailoringRequest){
+        throw new NotFoundException("Tailoring request not found");
+      }
+      const tailoringRequest = await this.prisma.tailoringRequest.delete({
+        where: {id},
+      })
+
+      return successResponse(
+        "Tailoring request deleted successfully",
+        tailoringRequest
+      )
 
     } catch (error) {
       if(error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
