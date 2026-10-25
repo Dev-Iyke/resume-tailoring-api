@@ -1,6 +1,6 @@
 # Resume Tailoring API
 
-REST API for managing job-specific resume tailoring requests. Each request is linked to a candidate's saved resume and includes a job title, company, and job description.
+REST API for managing a candidate's plain-text resume and job-specific tailoring requests. Requests are linked to the authenticated user's resume.
 
 ## Stack
 
@@ -31,7 +31,7 @@ REST API for managing job-specific resume tailoring requests. Each request is li
    npx prisma migrate dev
    ```
 
-4. Execute `prisma/seed.sql` in pgAdmin's Query Tool to add a dummy user and resume.
+4. Execute `prisma/seed.sql` in pgAdmin's Query Tool to add a local test user and resume. The local account is `jamie.example@example.test` with password `LocalOnlyPassword123!`; do not use this account outside local development.
 
 5. Start the API:
 
@@ -40,7 +40,7 @@ REST API for managing job-specific resume tailoring requests. Each request is li
    ```
 
 Swagger documentation: `http://localhost:5000/api/docs`.
-Sample CRUD requests are in `requests.http`. Replace `@requestId` with the ID returned by the create request before running the single-request examples.
+Sample authenticated requests are in `requests.http`. Log in and set the returned token in `@accessToken` before running protected requests.
 
 ## Endpoints
 
@@ -48,6 +48,13 @@ All endpoints use the `/api/v1` prefix.
 
 | Method | Path | Purpose |
 | --- | --- | --- |
+| `POST` | `/auth/register` | Register and send an email verification code |
+| `POST` | `/auth/verify-email` | Verify an email address |
+| `POST` | `/auth/resend-verification` | Resend an email verification code |
+| `POST` | `/auth/login` | Log in and receive a JWT |
+| `POST` | `/resumes` | Create the authenticated user's resume |
+| `GET` | `/resumes/me` | Get the authenticated user's resume |
+| `PATCH` | `/resumes/me` | Update the authenticated user's resume |
 | `POST` | `/tailoring-requests` | Create a tailoring request |
 | `GET` | `/tailoring-requests` | List tailoring requests |
 | `GET` | `/tailoring-requests/:id` | Get a tailoring request |
@@ -59,3 +66,9 @@ All endpoints use the `/api/v1` prefix.
 ```bash
 npm test
 ```
+
+## Project documents
+
+- [API specification](docs/api-specification.docx)
+- [Architecture diagram](docs/architecture.md)
+- [Issue log](docs/issue-log.md)

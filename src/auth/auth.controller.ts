@@ -15,6 +15,7 @@ export class AuthController {
   }
 
   @Post('verify-email')
+  @HttpCode(HttpStatus.OK)
   verifyEmail(@Body() payload: VerifyEmailDto) {
     return this.authService.verifyEmail(payload);
   }
