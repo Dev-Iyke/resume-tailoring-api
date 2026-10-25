@@ -2,9 +2,10 @@ import { Module } from '@nestjs/common';
 import { TailoringRequestsService } from './tailoring-requests.service.js';
 import { TailoringRequestsController } from './tailoring-requests.controller.js';
 import { PrismaModule } from '../prisma/prisma.module.js';
+import { AuthModule } from '../auth/auth.module.js';
 
 @Module({
-  imports: [PrismaModule],
+  imports: [PrismaModule, AuthModule],
   controllers: [TailoringRequestsController],
   providers: [TailoringRequestsService],
 })

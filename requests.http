@@ -1,10 +1,44 @@
 @baseUrl = http://localhost:5000/api/v1
+@email = jamie.example@example.test
+@password = LocalOnlyPassword123!
+@accessToken = paste-login-token-here
 @resumeId = 22222222-2222-4222-8222-222222222222
-# Replace with data.id returned by the create request.
-@requestId = b0d0a4fd-5226-414e-bbf7-e2273a15aebc
+@requestId = paste-created-request-id-here
 
-### Create a tailoring request
+### Log in with the local test account; copy data.access_token into @accessToken
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}"
+}
+
+### Get the authenticated user's resume
+GET {{baseUrl}}/resumes/me
+Authorization: Bearer {{accessToken}}
+
+### Create a resume (use an account that does not already have one)
+POST {{baseUrl}}/resumes
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "text": "Frontend developer with experience building accessible web applications using React and TypeScript."
+}
+
+### Update the authenticated user's resume
+PATCH {{baseUrl}}/resumes/me
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "text": "Updated plain-text resume content. Add your resume sections and experience here."
+}
+
+### Create a tailoring request; replace @resumeId when using a different resume
 POST {{baseUrl}}/tailoring-requests
+Authorization: Bearer {{accessToken}}
 Content-Type: application/json
 
 {
@@ -14,14 +48,17 @@ Content-Type: application/json
   "job_description": "We are seeking a junior backend developer to build REST APIs using Node.js and TypeScript. The role involves working with PostgreSQL, writing tests, reviewing code, and collaborating with frontend engineers."
 }
 
-### List tailoring requests
+### List the authenticated user's tailoring requests
 GET {{baseUrl}}/tailoring-requests
+Authorization: Bearer {{accessToken}}
 
-### Get a tailoring request
+### Get a tailoring request; replace @requestId with the returned data.id
 GET {{baseUrl}}/tailoring-requests/{{requestId}}
+Authorization: Bearer {{accessToken}}
 
 ### Update a tailoring request
 PATCH {{baseUrl}}/tailoring-requests/{{requestId}}
+Authorization: Bearer {{accessToken}}
 Content-Type: application/json
 
 {
@@ -30,3 +67,4 @@ Content-Type: application/json
 
 ### Delete a tailoring request
 DELETE {{baseUrl}}/tailoring-requests/{{requestId}}
+Authorization: Bearer {{accessToken}}
