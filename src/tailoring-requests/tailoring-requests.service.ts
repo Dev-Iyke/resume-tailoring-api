@@ -4,10 +4,11 @@ import { UpdateTailoringRequestDto } from './dto/update-tailoring-request.dto.js
 import { PrismaService } from '../prisma/prisma.service.js';
 import { successResponse } from '../common/responses/api-response.js';
 import { Prisma } from '../generated/prisma/client.js';
+import { AiService } from '../ai/ai.service.js';
 
 @Injectable()
 export class TailoringRequestsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService, private readonly ai: AiService) {}
 
   async create(userId: string, payload: CreateTailoringRequestDto) {
     const resume = await this.prisma.resume.findFirst({
@@ -24,6 +25,40 @@ export class TailoringRequestsService {
     })
 
     return successResponse("Request received", tailoringRequest)
+  }
+
+  async generate(userId: string, id: string) {
+    const request = await this.prisma.tailoringRequest.findFirst({
+      where: { id, resume: { is: { user_id: userId } } },
+      select: { id: true, resume: {select: {text: true, user: {
+        select: {full_name: true}
+      }}}, job_description: true },
+    });
+
+    if (!request) {
+      throw new NotFoundException("Tailoring request not found");
+    }
+
+    try {
+      const aiResponse = await this.ai.generateTailoringResult(request.resume.text, request.job_description)
+      aiResponse.coverLetter.signOff = `Sincerely,\n${request.resume.user.full_name}`;
+      
+      const updatedRequest = await this.prisma.tailoringRequest.update({
+        where: { id },
+        data: {status: "COMPLETED", result: aiResponse, generated_at: new Date(Date.now())},
+        select: { id: true, result: true, status: true, generated_at: true },
+      });
+      
+      return successResponse("Request received", updatedRequest )
+    } catch (error) {
+      if(error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
+        throw new NotFoundException("Tailoring request not found");
+      } else {
+        throw error
+      }
+    }
+
+
   }
 
   async findAll(userId: string) {

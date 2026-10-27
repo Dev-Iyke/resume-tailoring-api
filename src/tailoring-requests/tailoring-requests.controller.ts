@@ -22,6 +22,14 @@ export class TailoringRequestsController {
     return this.tailoringRequestsService.create(req.user.userId, createTailoringRequestDto);
   }
 
+  @Post(':id/generate')
+  generate(
+    @Req() req: AuthenticatedRequest,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.tailoringRequestsService.generate(req.user.userId, id);
+  }
+
   @Get()
   findAll(@Req() req: AuthenticatedRequest) {
     return this.tailoringRequestsService.findAll(req.user.userId);
