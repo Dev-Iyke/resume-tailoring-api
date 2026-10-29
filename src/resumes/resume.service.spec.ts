@@ -18,12 +18,25 @@ describe('ResumeService', () => {
     created_at: new Date(),
     updated_at: new Date(),
   };
+  const transactionMock = {
+    resume: {
+      findUnique: vi.fn(),
+      update: vi.fn(),
+    },
+    tailoringRequest: {
+      updateMany: vi.fn(),
+    },
+  };
   const prismaMock = {
     resume: {
       create: vi.fn(),
       findUnique: vi.fn(),
       update: vi.fn(),
     },
+    $transaction: vi.fn(
+      async (callback: (tx: typeof transactionMock) => Promise<unknown>) =>
+        callback(transactionMock),
+    ),
   };
 
   beforeEach(async () => {
@@ -81,17 +94,36 @@ describe('ResumeService', () => {
   });
 
   it('updates only the authenticated user resume', async () => {
-    prismaMock.resume.update.mockResolvedValue({
+    transactionMock.resume.findUnique.mockResolvedValue(resume);
+    transactionMock.resume.update.mockResolvedValue({
       ...resume,
       text: 'Updated resume text',
     });
+    transactionMock.tailoringRequest.updateMany.mockResolvedValue({ count: 1 });
 
     await service.updateMine(userId, { text: 'Updated resume text' });
 
-    expect(prismaMock.resume.update).toHaveBeenCalledWith({
+    expect(transactionMock.resume.findUnique).toHaveBeenCalledWith({
+      where: { user_id: userId },
+      select: { id: true, text: true },
+    });
+    expect(transactionMock.resume.update).toHaveBeenCalledWith({
       where: { user_id: userId },
       data: { text: 'Updated resume text' },
     });
+    expect(transactionMock.tailoringRequest.updateMany).toHaveBeenCalledWith({
+      where: { resume_id: resume.id, status: 'COMPLETED' },
+      data: { status: 'STALE' },
+    });
+  });
+
+  it('does not mark requests stale when the resume text is unchanged', async () => {
+    transactionMock.resume.findUnique.mockResolvedValue(resume);
+    transactionMock.resume.update.mockResolvedValue(resume);
+
+    await service.updateMine(userId, { text: resume.text });
+
+    expect(transactionMock.tailoringRequest.updateMany).not.toHaveBeenCalled();
   });
 
   it('rejects an update with no resume text', async () => {
@@ -102,15 +134,12 @@ describe('ResumeService', () => {
   });
 
   it('returns not found when updating a missing resume', async () => {
-    prismaMock.resume.update.mockRejectedValue(
-      new Prisma.PrismaClientKnownRequestError('Record not found', {
-        code: 'P2025',
-        clientVersion: '7.10.0',
-      }),
-    );
+    transactionMock.resume.findUnique.mockResolvedValue(null);
 
     await expect(
       service.updateMine(userId, { text: 'Updated resume text' }),
     ).rejects.toBeInstanceOf(NotFoundException);
+    expect(transactionMock.resume.update).not.toHaveBeenCalled();
+    expect(transactionMock.tailoringRequest.updateMany).not.toHaveBeenCalled();
   });
 });

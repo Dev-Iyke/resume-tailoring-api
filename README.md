@@ -54,11 +54,11 @@ All endpoints use the `/api/v1` prefix.
 | `POST` | `/auth/login` | Log in and receive a JWT |
 | `POST` | `/resumes` | Create the authenticated user's resume |
 | `GET` | `/resumes/me` | Get the authenticated user's resume |
-| `PATCH` | `/resumes/me` | Update the authenticated user's resume |
+| `PATCH` | `/resumes/me` | Update the authenticated user's resume; existing completed requests using it become stale |
 | `POST` | `/tailoring-requests` | Create a tailoring request |
 | `GET` | `/tailoring-requests` | List tailoring requests |
 | `GET` | `/tailoring-requests/:id` | Get a tailoring request |
-| `PATCH` | `/tailoring-requests/:id` | Update a tailoring request |
+| `PATCH` | `/tailoring-requests/:id` | Update a tailoring request; changing job details marks an existing result stale, while result-only edits remain completed |
 | `DELETE` | `/tailoring-requests/:id` | Delete a tailoring request |
 
 ## Tests

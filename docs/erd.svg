@@ -107,7 +107,7 @@
     <rect width="620" height="170" rx="3" fill="#F1F7F5" stroke="#C9D8D7"/>
     <text class="note-title" x="18" y="27">ENUMS AND INVARIANTS</text>
     <text class="note" x="18" y="54">UserStatus: PENDING_VERIFICATION | ACTIVE | SUSPENDED</text>
-    <text class="note" x="18" y="78">RequestStatus: PENDING | COMPLETED | FAILED</text>
+    <text class="note" x="18" y="78">RequestStatus: PENDING | COMPLETED | STALE | FAILED</text>
     <text class="note" x="18" y="108">Verification codes are stored as hashes. Resending replaces the current code.</text>
     <text class="note" x="18" y="135">PENDING_VERIFICATION: email_verified_at is null; ACTIVE: timestamp is set.</text>
   </g>

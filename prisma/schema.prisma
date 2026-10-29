@@ -16,6 +16,7 @@ enum UserStatus {
 enum RequestStatus {
   PENDING
   COMPLETED
+  STALE
   FAILED
 }
 
