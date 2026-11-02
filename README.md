@@ -91,6 +91,10 @@ The tests cover authentication, ownership, validation and error responses, tailo
 
 ## Project documents
 
+- [5-minute walkthrough video](https://www.loom.com/share/38a4d4d6a4b84d9990bd43ee2eef152f)
 - [API specification](docs/api-specification.docx)
 - [Architecture diagram](docs/architecture.md)
+- [End-to-end architecture](docs/end-to-end-architecture.md)
 - [Issue log](docs/issue-log.md)
+- [Technical reflection](docs/technical-reflection.md)
+- [AI-use declaration](docs/ai-use-declaration.md)
