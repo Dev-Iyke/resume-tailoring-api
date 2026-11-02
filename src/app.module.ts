@@ -10,7 +10,8 @@ import { ResumeModule } from './resumes/resume.module.js';
 @Module({
   imports: [
     ConfigModule.forRoot({
-      isGlobal: true
+      isGlobal: true,
+      envFilePath: process.env.NODE_ENV === 'test' ? '.env.test.local' : '.env',
     }),
     TailoringRequestsModule,
     AuthModule,
