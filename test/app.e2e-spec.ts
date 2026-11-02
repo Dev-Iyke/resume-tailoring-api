@@ -174,7 +174,22 @@ describe('API (e2e)', () => {
       .set('Authorization', `Bearer ${activeUserToken}`)
       .expect(200);
 
-    expect(response.body.data).toEqual([]);
+    expect(response.body.data.items).toEqual([]);
+    expect(response.body.data.pagination).toEqual({
+      page: 1,
+      limit: 10,
+      totalItems: 0,
+      totalPages: 0,
+    });
+  });
+
+  it('rejects invalid pagination query values', async () => {
+    const response = await request(app.getHttpServer())
+      .get('/api/v1/tailoring-requests?page=0&limit=101')
+      .set('Authorization', `Bearer ${activeUserToken}`)
+      .expect(400);
+
+    expect(response.body.error.code).toBe('VALIDATION_ERROR');
   });
 
   it('hides another users tailoring request as not found', async () => {
@@ -213,13 +228,19 @@ describe('API (e2e)', () => {
     expect(createdResponse.body.data.result).toBeNull();
 
     const listResponse = await request(app.getHttpServer())
-      .get('/api/v1/tailoring-requests')
+      .get('/api/v1/tailoring-requests?page=1&limit=10')
       .set('Authorization', `Bearer ${activeUserToken}`)
       .expect(200);
 
     expect(
-      listResponse.body.data.map((item: { id: string }) => item.id),
+      listResponse.body.data.items.map((item: { id: string }) => item.id),
     ).toContain(requestId);
+    expect(listResponse.body.data.pagination).toEqual({
+      page: 1,
+      limit: 10,
+      totalItems: 1,
+      totalPages: 1,
+    });
 
     const fetchedResponse = await request(app.getHttpServer())
       .get(`/api/v1/tailoring-requests/${requestId}`)

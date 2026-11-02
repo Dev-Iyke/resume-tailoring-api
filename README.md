@@ -56,7 +56,7 @@ All endpoints use the `/api/v1` prefix.
 | `GET` | `/resumes/me` | Get the authenticated user's resume |
 | `PATCH` | `/resumes/me` | Update the authenticated user's resume; existing completed requests using it become stale |
 | `POST` | `/tailoring-requests` | Create a tailoring request |
-| `GET` | `/tailoring-requests` | List tailoring requests |
+| `GET` | `/tailoring-requests` | List the authenticated user's requests with `page` (default `1`) and `limit` (default `10`, maximum `100`) query parameters. Returns the page's `items` and pagination metadata. |
 | `GET` | `/tailoring-requests/:id` | Get a tailoring request |
 | `PATCH` | `/tailoring-requests/:id` | Update a tailoring request; changing job details marks an existing result stale, while result-only edits remain completed |
 | `DELETE` | `/tailoring-requests/:id` | Delete a tailoring request |

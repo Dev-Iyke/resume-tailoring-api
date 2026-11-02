@@ -9,6 +9,7 @@ import {
   ParseUUIDPipe,
   UseGuards,
   Req,
+  Query,
 } from '@nestjs/common';
 import { TailoringRequestsService } from './tailoring-requests.service.js';
 import { CreateTailoringRequestDto } from './dto/create-tailoring-request.dto.js';
@@ -16,6 +17,7 @@ import { UpdateTailoringRequestDto } from './dto/update-tailoring-request.dto.js
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
 import { Request } from 'express';
 import { ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { PaginationQueryDto } from './dto/pagination-query.dto.js';
 
 type AuthenticatedRequest = Request & {
   user: { userId: string };
@@ -49,8 +51,8 @@ export class TailoringRequestsController {
   }
 
   @Get()
-  findAll(@Req() req: AuthenticatedRequest) {
-    return this.tailoringRequestsService.findAll(req.user.userId);
+  findAll(@Req() req: AuthenticatedRequest, @Query() query: PaginationQueryDto,) {
+    return this.tailoringRequestsService.findAll(req.user.userId, query);
   }
 
   @Get(':id')

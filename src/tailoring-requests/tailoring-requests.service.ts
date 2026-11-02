@@ -10,6 +10,7 @@ import { successResponse } from '../common/responses/api-response.js';
 import { Prisma } from '../generated/prisma/client.js';
 import { AiService } from '../ai/ai.service.js';
 import { TailoringResultSchema } from '../ai/schemas/tailoring-result.schema.js';
+import { PaginationQueryDto } from './dto/pagination-query.dto.js';
 
 @Injectable()
 export class TailoringRequestsService {
@@ -86,11 +87,29 @@ export class TailoringRequestsService {
     }
   }
 
-  async findAll(userId: string) {
-    const tailoringRequests = await this.prisma.tailoringRequest.findMany({
-      where: { resume: { is: { user_id: userId } } },
-    });
-    return successResponse('All requests retrieved', tailoringRequests);
+  async findAll(userId: string, query: PaginationQueryDto) {
+    const {page, limit} = query
+    const where = { resume: { is: { user_id: userId } } }
+    const [items, totalItems] = await this.prisma.$transaction([
+      this.prisma.tailoringRequest.findMany({
+        where,
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy: [{created_at: "desc"}, {id: "desc"}]
+      }),
+      this.prisma.tailoringRequest.count({where})
+    ])
+
+    const data = {
+      items,
+      pagination: {
+        page,
+        limit,
+        totalItems,
+        totalPages: Math.ceil(totalItems / limit)
+      }
+    }
+    return successResponse('All requests retrieved', data);
   }
 
   async findOneById(userId: string, id: string) {

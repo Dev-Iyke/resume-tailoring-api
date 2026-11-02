@@ -36,10 +36,12 @@ describe('TailoringRequestsService', () => {
     generateTailoringResult: vi.fn(),
   };
   const prismaMock = {
+    $transaction: vi.fn(),
     resume: { findFirst: vi.fn() },
     tailoringRequest: {
       create: vi.fn(),
       findMany: vi.fn(),
+      count: vi.fn(),
       findFirst: vi.fn(),
       update: vi.fn(),
       delete: vi.fn(),
@@ -178,12 +180,27 @@ describe('TailoringRequestsService', () => {
   });
 
   it('lists requests belonging only to the authenticated user', async () => {
-    prismaMock.tailoringRequest.findMany.mockResolvedValue([]);
+    const items = [{ id: requestId }];
+    const totalItems = 24;
+    prismaMock.tailoringRequest.findMany.mockResolvedValue(items);
+    prismaMock.tailoringRequest.count.mockResolvedValue(totalItems);
+    prismaMock.$transaction.mockResolvedValue([items, totalItems]);
 
-    await service.findAll(userId);
+    const response = await service.findAll(userId, { page: 2, limit: 10 });
 
     expect(prismaMock.tailoringRequest.findMany).toHaveBeenCalledWith({
       where: { resume: { is: { user_id: userId } } },
+      skip: 10,
+      take: 10,
+      orderBy: [{ created_at: 'desc' }, { id: 'desc' }],
+    });
+    expect(prismaMock.tailoringRequest.count).toHaveBeenCalledWith({
+      where: { resume: { is: { user_id: userId } } },
+    });
+    expect(prismaMock.$transaction).toHaveBeenCalledOnce();
+    expect(response.data).toEqual({
+      items,
+      pagination: { page: 2, limit: 10, totalItems: 24, totalPages: 3 },
     });
   });
 
