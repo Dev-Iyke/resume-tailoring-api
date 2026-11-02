@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthController } from './auth.controller.js';
 import { AuthService } from './auth.service.js';
+import { ThrottlerGuard } from '@nestjs/throttler';
 
 describe('AuthController', () => {
   let controller: AuthController;
@@ -14,7 +15,10 @@ describe('AuthController', () => {
           useValue: { register: vi.fn() },
         },
       ],
-    }).compile();
+    })
+      .overrideGuard(ThrottlerGuard)
+      .useValue({ canActivate: vi.fn(() => true) })
+      .compile();
 
     controller = module.get<AuthController>(AuthController);
   });

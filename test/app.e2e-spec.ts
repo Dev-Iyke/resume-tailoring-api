@@ -145,6 +145,20 @@ describe('API (e2e)', () => {
     expect(response.body.error.code).toBe('FORBIDDEN');
   });
 
+  it('returns 429 after the auth route exceeds its request limit', async () => {
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      await request(app.getHttpServer())
+        .post('/api/v1/auth/verify-email')
+        .send({})
+        .expect(400);
+    }
+
+    await request(app.getHttpServer())
+      .post('/api/v1/auth/verify-email')
+      .send({})
+      .expect(429);
+  });
+
   it('returns not found for an authenticated request with an unknown ID', async () => {
     const response = await request(app.getHttpServer())
       .get(`/api/v1/tailoring-requests/${randomUUID()}`)
