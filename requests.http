@@ -49,7 +49,7 @@ Content-Type: application/json
 }
 
 ### List the authenticated user's tailoring requests
-GET {{baseUrl}}/tailoring-requests
+GET {{baseUrl}}/tailoring-requests?page=1&limit=10
 Authorization: Bearer {{accessToken}}
 
 ### Get a tailoring request; replace @requestId with the returned data.id

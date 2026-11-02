@@ -29,7 +29,9 @@ export class ResumeService {
         error instanceof Prisma.PrismaClientKnownRequestError &&
         error.code === 'P2002'
       ) {
-        throw new ConflictException('A resume already exists for this account.');
+        throw new ConflictException(
+          'A resume already exists for this account.',
+        );
       }
 
       throw error;
@@ -54,9 +56,29 @@ export class ResumeService {
     }
 
     try {
-      const resume = await this.prisma.resume.update({
-        where: { user_id: userId },
-        data: { text: payload.text },
+      const resume = await this.prisma.$transaction(async (tx) => {
+        const currentResume = await tx.resume.findUnique({
+          where: { user_id: userId },
+          select: { id: true, text: true },
+        });
+
+        if (!currentResume) {
+          throw new NotFoundException('Resume not found.');
+        }
+
+        const updatedResume = await tx.resume.update({
+          where: { user_id: userId },
+          data: { text: payload.text },
+        });
+
+        if (currentResume.text !== payload.text) {
+          await tx.tailoringRequest.updateMany({
+            where: { resume_id: currentResume.id, status: 'COMPLETED' },
+            data: { status: 'STALE' },
+          });
+        }
+
+        return updatedResume;
       });
 
       return successResponse('Resume updated successfully.', resume);

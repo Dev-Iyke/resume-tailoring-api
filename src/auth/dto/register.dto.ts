@@ -8,13 +8,13 @@ import {
 } from 'class-validator';
 
 export class RegisterDto {
-  @ApiProperty({ example: 'Jamie Example', maxLength: 100 })
+  @ApiProperty({ example: 'Jerry Example', maxLength: 100 })
   @IsString()
   @IsNotEmpty()
   @MaxLength(100)
   full_name!: string;
 
-  @ApiProperty({ example: 'jamie@example.com', maxLength: 254 })
+  @ApiProperty({ example: 'jerry@mailinator.com', maxLength: 254 })
   @IsEmail()
   @MaxLength(254)
   email!: string;

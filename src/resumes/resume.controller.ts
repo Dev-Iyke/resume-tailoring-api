@@ -7,7 +7,7 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { Request } from 'express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
 import { CreateResumeDto } from './dto/create-resume.dto.js';
@@ -26,10 +26,7 @@ export class ResumeController {
   constructor(private readonly resumeService: ResumeService) {}
 
   @Post()
-  create(
-    @Req() req: AuthenticatedRequest,
-    @Body() payload: CreateResumeDto,
-  ) {
+  create(@Req() req: AuthenticatedRequest, @Body() payload: CreateResumeDto) {
     return this.resumeService.create(req.user.userId, payload);
   }
 
@@ -39,6 +36,10 @@ export class ResumeController {
   }
 
   @Patch('me')
+  @ApiOperation({
+    description:
+      'Updating the resume marks completed tailoring requests that use it as STALE. Their saved results and generated_at timestamps are retained.',
+  })
   updateMine(
     @Req() req: AuthenticatedRequest,
     @Body() payload: UpdateResumeDto,
