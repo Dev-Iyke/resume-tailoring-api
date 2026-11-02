@@ -3,7 +3,6 @@ import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { AiService } from '../ai/ai.service.js';
 import { TailoringRequestsService } from './tailoring-requests.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { Prisma } from '../generated/prisma/client.js';
 
 describe('TailoringRequestsService', () => {
   let service: TailoringRequestsService;
